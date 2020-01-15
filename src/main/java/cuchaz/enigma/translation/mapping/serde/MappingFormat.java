@@ -17,6 +17,7 @@ public enum MappingFormat {
 	TINY_V2(new TinyV2Writer("intermediary", "named"), new TinyV2Reader()),
 	TINY_FILE(TinyMappingsWriter.INSTANCE, TinyMappingsReader.INSTANCE),
 	SRG_FILE(SrgMappingsWriter.INSTANCE, null),
+	ALPHA_MCP(null, AlphaMcpReader.INSTANCE),
 	PROGUARD(null, ProguardMappingsReader.INSTANCE);
 
 
