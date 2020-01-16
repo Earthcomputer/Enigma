@@ -72,7 +72,7 @@ public enum AlphaMcpReader implements MappingsReader {
                         tree.insert(new ClassEntry(line[1]), new EntryMapping("net/minecraft/src/" + line[2], classDocs.get(line[1])));
                     } else if (".field_map".equals(line[0])) {
                         String[] obf = line[1].split("/");
-                        if (obf[0].length() < 3 && obf[1].length() < 3) {
+                        if ((obf[0].length() < 3 || obf[0].startsWith("net/minecraft/")) && obf[1].length() < 3) {
                             tree.insert(FieldEntry.parse(obf[0], obf[1], fieldDescs.get(line[1])), new EntryMapping(fieldNames.getOrDefault(line[2], line[2]), fieldDocs.get(line[2])));
                         }
                     } else {
@@ -85,7 +85,9 @@ public enum AlphaMcpReader implements MappingsReader {
     }
 
     private static List<String[]> readCsv(Path file, int skip) throws IOException {
-        return Files.lines(file).skip(skip).map(line -> line.split(",")).collect(Collectors.toList());
+        if (!Files.exists(file))
+            return Collections.emptyList();
+        return Files.lines(file).skip(skip).filter(it -> it.contains(",")).map(line -> line.split(",")).collect(Collectors.toList());
     }
 
     private static String getDocs(String[] arr, int start) {
