@@ -935,6 +935,6 @@ public class Gui {
 
 	private void refreshZoom() {
 		float scale = ZOOM_SCALES[zoomLevel];
-		editor.setCustomFontScale(ZOOM_SCALES[zoomLevel]);
+		editor.setCustomFontScale(scale);
 	}
 }
