@@ -8,7 +8,6 @@ import cuchaz.enigma.gui.dialog.SearchDialog;
 import cuchaz.enigma.gui.stats.StatsMember;
 import cuchaz.enigma.translation.mapping.serde.MappingFormat;
 import cuchaz.enigma.utils.I18n;
-import cuchaz.enigma.utils.Utils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -271,6 +270,24 @@ public class MenuBar extends JMenuBar {
 						new SearchDialog(this.gui).show();
 					}
 				});
+
+				JMenu zoom = new JMenu(I18n.translate("menu.view.zoom"));
+				menu.add(zoom);
+				{
+					JMenuItem zoomIn = new JMenuItem(I18n.translate("menu.view.zoom.in"));
+					zoomIn.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.CTRL_DOWN_MASK));
+					zoom.add(zoomIn);
+					zoomIn.addActionListener(event -> gui.zoomIn());
+
+					JMenuItem zoomOut = new JMenuItem(I18n.translate("menu.view.zoom.out"));
+					zoomOut.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_DOWN_MASK));
+					zoom.add(zoomOut);
+					zoomOut.addActionListener(event -> gui.zoomOut());
+
+					JMenuItem zoom100 = new JMenuItem(I18n.translate("menu.view.zoom.100"));
+					zoom.add(zoom100);
+					zoom100.addActionListener(event -> gui.zoom100());
+				}
 
 			}
 		}

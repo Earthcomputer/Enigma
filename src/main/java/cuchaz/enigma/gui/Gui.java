@@ -49,7 +49,6 @@ import java.awt.event.*;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class Gui {
@@ -87,6 +86,9 @@ public class Gui {
 	public JTextField renameTextField;
 	public JTextArea javadocTextArea;
 
+	private static final float[] ZOOM_SCALES = {0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f, 2.5f, 3f, 4f, 5f, 6f};
+	private int zoomLevel;
+
 	public void setEditorTheme(Config.LookAndFeel feel) {
 		if (editor != null && (editorFeel == null || editorFeel != feel)) {
 			editor.updateUI();
@@ -100,6 +102,14 @@ public class Gui {
 	}
 
 	public Gui(EnigmaProfile profile) {
+		// Set initial zoom to 100%
+		for (int i = 0; i < ZOOM_SCALES.length; i++) {
+			if (ZOOM_SCALES[i] == 1) {
+				zoomLevel = i;
+				break;
+			}
+		}
+
 		Config.getInstance().lookAndFeel.setGlobalLAF();
 
 		// init frame
@@ -895,5 +905,36 @@ public class Gui {
 
 	public void setShouldNavigateOnClick(boolean shouldNavigateOnClick) {
 		this.shouldNavigateOnClick = shouldNavigateOnClick;
+	}
+
+	public void zoomIn() {
+		if (zoomLevel < ZOOM_SCALES.length - 1) {
+			zoomLevel++;
+			refreshZoom();
+		}
+	}
+
+	public void zoomOut() {
+		if (zoomLevel > 0) {
+			zoomLevel--;
+			refreshZoom();
+		}
+	}
+
+	public void zoom100() {
+		if (ZOOM_SCALES[zoomLevel] != 1) {
+			for (int i = 0; i < ZOOM_SCALES.length; i++) {
+				if (ZOOM_SCALES[i] == 1) {
+					zoomLevel = i;
+					break;
+				}
+			}
+			refreshZoom();
+		}
+	}
+
+	private void refreshZoom() {
+		float scale = ZOOM_SCALES[zoomLevel];
+		editor.setCustomFontScale(ZOOM_SCALES[zoomLevel]);
 	}
 }

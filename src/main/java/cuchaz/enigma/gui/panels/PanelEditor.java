@@ -17,6 +17,10 @@ import java.awt.event.MouseEvent;
 
 public class PanelEditor extends JEditorPane {
 	private boolean mouseIsPressed = false;
+	private float defaultFontSize = getFont().getSize2D();
+	private float customFontScale = 1;
+	// hack for updateUI being called in the parent constructor
+	private boolean calledConstructor = false;
 
 	public PanelEditor(Gui gui) {
 		this.setEditable(false);
@@ -133,10 +137,33 @@ public class PanelEditor extends JEditorPane {
 				gui.setShouldNavigateOnClick(event.isControlDown());
 			}
 		});
+
+		calledConstructor = true;
 	}
 
 	@Override
 	public Color getCaretColor() {
 		return new Color(Config.getInstance().caretColor);
+	}
+
+	public void setCustomFontScale(float customFontScale) {
+		if (defaultFontSize == 0) {
+			defaultFontSize = getFont().getSize2D();
+		}
+
+		this.customFontScale = customFontScale;
+		setFont(getFont().deriveFont(defaultFontSize * customFontScale));
+	}
+
+	@Override
+	public void updateUI() {
+		Font oldFont = getFont();
+		super.updateUI();
+		Font newFont = getFont();
+		if (calledConstructor && newFont != oldFont) {
+			// the default font changed
+			defaultFontSize = newFont.getSize2D();
+			setCustomFontScale(customFontScale);
+		}
 	}
 }
