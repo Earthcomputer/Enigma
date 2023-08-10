@@ -31,6 +31,7 @@ import cuchaz.enigma.source.DecompilerService;
 import cuchaz.enigma.source.Source;
 import cuchaz.enigma.source.SourceIndex;
 import cuchaz.enigma.source.SourceSettings;
+import cuchaz.enigma.translation.annotations.AnnotationModifierClassProvider;
 import cuchaz.enigma.translation.representation.entry.ClassEntry;
 import cuchaz.enigma.utils.Result;
 
@@ -102,7 +103,7 @@ public final class ClassHandleProvider {
 	}
 
 	private Decompiler createDecompiler() {
-		return ds.create(new CachingClassProvider(new ObfuscationFixClassProvider(project.getClassProvider(), project.getJarIndex())), new SourceSettings(true, true));
+		return ds.create(new AnnotationModifierClassProvider(new CachingClassProvider(new ObfuscationFixClassProvider(project.getClassProvider(), project.getJarIndex())), project::getAnnotationModsTree), new SourceSettings(true, true));
 	}
 
 	/**
@@ -159,6 +160,26 @@ public final class ClassHandleProvider {
 
 			if (entry.isInnerClass()) {
 				this.invalidateJavadoc(entry.getOuterClass());
+			}
+		});
+	}
+
+	public void invalidate() {
+		withLock(lock.readLock(), () -> {
+			handles.values().forEach(Entry::invalidate);
+		});
+	}
+
+	public void invalidate(ClassEntry entry) {
+		withLock(lock.readLock(), () -> {
+			Entry e = handles.get(entry);
+
+			if (e != null) {
+				e.invalidate();
+			}
+
+			if (entry.isInnerClass()) {
+				invalidate(entry.getOuterClass());
 			}
 		});
 	}

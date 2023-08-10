@@ -21,6 +21,9 @@ import com.google.common.base.Preconditions;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.ClassNode;
 
+import cuchaz.enigma.translation.annotations.AnnotationModifierVisitor;
+import cuchaz.enigma.translation.annotations.AnnotationMods;
+import cuchaz.enigma.translation.mapping.tree.HashEntryTree;
 import cuchaz.enigma.analysis.EntryReference;
 import cuchaz.enigma.analysis.index.JarIndex;
 import cuchaz.enigma.api.service.NameProposalService;
@@ -54,6 +57,7 @@ public class EnigmaProject {
 	private final byte[] jarChecksum;
 
 	private EntryRemapper mapper;
+	private EntryTree<AnnotationMods> annotationModsTree = new HashEntryTree<>();
 
 	public EnigmaProject(Enigma enigma, Path jarPath, ClassProvider classProvider, JarIndex jarIndex, byte[] jarChecksum) {
 		Preconditions.checkArgument(jarChecksum.length == 20);
@@ -72,6 +76,10 @@ public class EnigmaProject {
 		} else {
 			mapper = EntryRemapper.empty(jarIndex);
 		}
+	}
+
+	public void setAnnotationMods(EntryTree<AnnotationMods> annotationMods) {
+		this.annotationModsTree = annotationMods;
 	}
 
 	public Enigma getEnigma() {
@@ -96,6 +104,10 @@ public class EnigmaProject {
 
 	public EntryRemapper getMapper() {
 		return mapper;
+	}
+
+	public EntryTree<AnnotationMods> getAnnotationModsTree() {
+		return annotationModsTree;
 	}
 
 	public void dropMappings(ProgressListener progress) {
@@ -223,7 +235,7 @@ public class EnigmaProject {
 
 			if (node != null) {
 				ClassNode translatedNode = new ClassNode();
-				node.accept(new TranslationClassVisitor(deobfuscator, Enigma.ASM_VERSION, translatedNode));
+				node.accept(new AnnotationModifierVisitor(Enigma.ASM_VERSION, new TranslationClassVisitor(deobfuscator, Enigma.ASM_VERSION, translatedNode), annotationModsTree));
 				return translatedNode;
 			}
 

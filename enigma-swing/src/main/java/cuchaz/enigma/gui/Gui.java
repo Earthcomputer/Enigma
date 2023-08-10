@@ -119,6 +119,7 @@ public class Gui {
 	public final JFileChooser jarFileChooser = new JFileChooser();
 	public final JFileChooser tinyMappingsFileChooser = new JFileChooser();
 	public final JFileChooser enigmaMappingsFileChooser = new JFileChooser();
+	public final JFileChooser annotationsFileChooser = new JFileChooser();
 	public final JFileChooser exportSourceFileChooser = new JFileChooser();
 	public final JFileChooser exportJarFileChooser = new JFileChooser();
 	public SearchDialog searchDialog;
@@ -151,6 +152,9 @@ public class Gui {
 
 		this.enigmaMappingsFileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		this.enigmaMappingsFileChooser.setAcceptAllFileFilterUsed(false);
+
+		this.annotationsFileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		this.annotationsFileChooser.setAcceptAllFileFilterUsed(false);
 
 		this.exportSourceFileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		this.exportSourceFileChooser.setAcceptAllFileFilterUsed(false);

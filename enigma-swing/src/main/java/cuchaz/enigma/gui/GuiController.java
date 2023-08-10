@@ -70,6 +70,8 @@ import cuchaz.enigma.source.SourceIndex;
 import cuchaz.enigma.source.Token;
 import cuchaz.enigma.translation.TranslateResult;
 import cuchaz.enigma.translation.Translator;
+import cuchaz.enigma.translation.annotations.AnnotationMods;
+import cuchaz.enigma.translation.annotations.AnnotationModsIo;
 import cuchaz.enigma.translation.mapping.EntryChange;
 import cuchaz.enigma.translation.mapping.EntryMapping;
 import cuchaz.enigma.translation.mapping.EntryRemapper;
@@ -256,6 +258,26 @@ public class GuiController implements ClientPacketHandler {
 		}
 
 		return ProgressDialog.runOffThread(this.gui.getFrame(), progress -> project.dropMappings(progress));
+	}
+
+	public CompletableFuture<Void> openAnnotations(Path path) {
+		if (project == null) {
+			return CompletableFuture.completedFuture(null);
+		}
+
+		return ProgressDialog.runOffThread(gui.getFrame(), progress -> {
+			EntryTree<AnnotationMods> newAnnotationMods = new HashEntryTree<>();
+
+			try {
+				AnnotationModsIo.fromJsonDirectory(path, newAnnotationMods);
+			} catch (Exception e) {
+				JOptionPane.showMessageDialog(gui.getFrame(), e.getMessage());
+				return;
+			}
+
+			project.setAnnotationMods(newAnnotationMods);
+			chp.invalidate();
+		});
 	}
 
 	public CompletableFuture<Void> exportSource(final Path path) {

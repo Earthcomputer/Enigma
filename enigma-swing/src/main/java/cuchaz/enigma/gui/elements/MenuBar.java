@@ -52,6 +52,7 @@ public class MenuBar {
 	private final JMenuItem dropMappingsItem = new JMenuItem();
 	private final JMenuItem reloadMappingsItem = new JMenuItem();
 	private final JMenuItem reloadAllItem = new JMenuItem();
+	private final JMenuItem openAnnotationsItem = new JMenuItem();
 	private final JMenuItem exportSourceItem = new JMenuItem();
 	private final JMenuItem exportJarItem = new JMenuItem();
 	private final JMenuItem statsItem = new JMenuItem();
@@ -107,6 +108,8 @@ public class MenuBar {
 		this.fileMenu.add(this.reloadMappingsItem);
 		this.fileMenu.add(this.reloadAllItem);
 		this.fileMenu.addSeparator();
+		this.fileMenu.add(this.openAnnotationsItem);
+		this.fileMenu.addSeparator();
 		this.fileMenu.add(this.exportSourceItem);
 		this.fileMenu.add(this.exportJarItem);
 		this.fileMenu.addSeparator();
@@ -147,6 +150,7 @@ public class MenuBar {
 		this.dropMappingsItem.addActionListener(_e -> this.gui.getController().dropMappings());
 		this.reloadMappingsItem.addActionListener(_e -> this.onReloadMappingsClicked());
 		this.reloadAllItem.addActionListener(_e -> this.onReloadAllClicked());
+		this.openAnnotationsItem.addActionListener(_e -> this.onOpenAnnotationsClicked());
 		this.exportSourceItem.addActionListener(_e -> this.onExportSourceClicked());
 		this.exportJarItem.addActionListener(_e -> this.onExportJarClicked());
 		this.statsItem.addActionListener(_e -> StatsDialog.show(this.gui));
@@ -178,6 +182,7 @@ public class MenuBar {
 		this.closeMappingsItem.setEnabled(jarOpen);
 		this.reloadMappingsItem.setEnabled(jarOpen);
 		this.reloadAllItem.setEnabled(jarOpen);
+		this.openAnnotationsItem.setEnabled(jarOpen);
 		this.exportSourceItem.setEnabled(jarOpen);
 		this.exportJarItem.setEnabled(jarOpen);
 		this.statsItem.setEnabled(jarOpen);
@@ -194,6 +199,7 @@ public class MenuBar {
 		this.dropMappingsItem.setText(I18n.translate("menu.file.mappings.drop"));
 		this.reloadMappingsItem.setText(I18n.translate("menu.file.reload_mappings"));
 		this.reloadAllItem.setText(I18n.translate("menu.file.reload_all"));
+		this.openAnnotationsItem.setText(I18n.translate("menu.file.open_annotations"));
 		this.exportSourceItem.setText(I18n.translate("menu.file.export.source"));
 		this.exportJarItem.setText(I18n.translate("menu.file.export.jar"));
 		this.statsItem.setText(I18n.translate("menu.file.stats"));
@@ -277,6 +283,15 @@ public class MenuBar {
 
 	private void onReloadAllClicked() {
 		openMappingsDiscardPrompt(() -> this.gui.getController().reloadAll());
+	}
+
+	private void onOpenAnnotationsClicked() {
+		this.gui.annotationsFileChooser.setCurrentDirectory(new File(UiConfig.getLastSelectedDir()));
+
+		if (this.gui.annotationsFileChooser.showOpenDialog(this.gui.getFrame()) == JFileChooser.APPROVE_OPTION) {
+			UiConfig.setLastSelectedDir(this.gui.annotationsFileChooser.getCurrentDirectory().toString());
+			this.gui.getController().openAnnotations(this.gui.annotationsFileChooser.getSelectedFile().toPath());
+		}
 	}
 
 	private void onExportSourceClicked() {

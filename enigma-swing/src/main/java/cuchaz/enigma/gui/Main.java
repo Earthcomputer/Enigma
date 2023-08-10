@@ -42,6 +42,8 @@ public class Main {
 
 		OptionSpec<Path> mappings = parser.accepts("mappings", "Mappings file to open at startup").withRequiredArg().withValuesConvertedBy(PathConverter.INSTANCE);
 
+		OptionSpec<Path> annotations = parser.accepts("annotations", "Annotation modifiers to open at startup").withRequiredArg().withValuesConvertedBy(PathConverter.INSTANCE);
+
 		OptionSpec<Path> profile = parser.accepts("profile", "Profile json to apply at startup").withRequiredArg().withValuesConvertedBy(PathConverter.INSTANCE);
 
 		parser.acceptsAll(List.of("edit-all", "e"), "Enable editing everything");
@@ -149,6 +151,11 @@ public class Main {
 						} else {
 							controller.openMappings(MappingFormat.ENIGMA_FILE, mappingsPath);
 						}
+					}
+
+					if (options.has(annotations)) {
+						Path annotationsPath = options.valueOf(annotations);
+						controller.openAnnotations(annotationsPath);
 					}
 				});
 			}

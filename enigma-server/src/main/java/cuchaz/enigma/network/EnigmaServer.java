@@ -32,7 +32,7 @@ import cuchaz.enigma.translation.representation.entry.Entry;
 public abstract class EnigmaServer {
 	// https://discordapp.com/channels/507304429255393322/566418023372816394/700292322918793347
 	public static final int DEFAULT_PORT = 34712;
-	public static final int PROTOCOL_VERSION = 1;
+	public static final int PROTOCOL_VERSION = 2;
 	public static final int CHECKSUM_SIZE = 20;
 	public static final int MAX_PASSWORD_LENGTH = 255; // length is written as a byte in the login packet
 

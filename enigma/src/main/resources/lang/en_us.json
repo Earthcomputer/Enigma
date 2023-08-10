@@ -24,6 +24,7 @@
 	"menu.file.mappings.drop": "Drop Invalid Mappings",
 	"menu.file.reload_mappings": "Reload Mappings",
 	"menu.file.reload_all": "Reload Jar/Mappings",
+	"menu.file.open_annotations": "Open Annotations...",
 	"menu.file.export.source": "Export Source...",
 	"menu.file.export.jar": "Export Jar...",
 	"menu.file.stats": "Mapping Stats...",
