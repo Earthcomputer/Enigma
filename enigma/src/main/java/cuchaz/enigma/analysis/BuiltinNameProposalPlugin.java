@@ -106,7 +106,7 @@ public class BuiltinNameProposalPlugin implements EnigmaPlugin {
 			Analyzer<SourceValue> analyzer = new Analyzer<>(new SourceInterpreter());
 
 			for (MethodNode mn : classInits) {
-				Frame<SourceValue>[] frames = analyzer.analyze(className, mn);
+				Frame<SourceValue>[] frames = analyzer.analyzeAndComputeMaxs(className, mn);
 				InsnList instrs = mn.instructions;
 
 				for (int i = 1; i < instrs.size(); i++) {

@@ -38,6 +38,7 @@ import cuchaz.enigma.classprovider.CachingClassProvider;
 import cuchaz.enigma.classprovider.ClassProvider;
 import cuchaz.enigma.classprovider.CombiningClassProvider;
 import cuchaz.enigma.classprovider.JarClassProvider;
+import cuchaz.enigma.classprovider.TransformingClassProvider;
 import cuchaz.enigma.utils.OrderingImpl;
 import cuchaz.enigma.utils.Utils;
 
@@ -69,7 +70,8 @@ public class Enigma {
 
 	public EnigmaProject openJars(List<Path> paths, ClassProvider libraryClassProvider, ProgressListener progress) throws IOException {
 		ClassProvider jarClassProvider = getJarClassProvider(paths);
-		ClassProvider classProvider = new CachingClassProvider(new CombiningClassProvider(jarClassProvider, libraryClassProvider));
+		TransformingClassProvider transformingClassProvider = new TransformingClassProvider(jarClassProvider, services);
+		ClassProvider classProvider = new CachingClassProvider(new CombiningClassProvider(transformingClassProvider, libraryClassProvider));
 		Set<String> scope = Set.copyOf(jarClassProvider.getClassNames());
 
 		JarIndex index = JarIndex.empty();

@@ -6,7 +6,7 @@ import org.objectweb.asm.tree.ClassNode;
 
 public class AsmUtil {
 	public static byte[] nodeToBytes(ClassNode node) {
-		ClassWriter w = new ClassWriter(0);
+		ClassWriter w = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 		node.accept(w);
 		return w.toByteArray();
 	}
