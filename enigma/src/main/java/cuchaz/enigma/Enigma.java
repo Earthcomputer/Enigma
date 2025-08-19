@@ -39,6 +39,7 @@ import cuchaz.enigma.classprovider.ClassProvider;
 import cuchaz.enigma.classprovider.CombiningClassProvider;
 import cuchaz.enigma.classprovider.JarClassProvider;
 import cuchaz.enigma.classprovider.TransformingClassProvider;
+import cuchaz.enigma.utils.I18n;
 import cuchaz.enigma.utils.OrderingImpl;
 import cuchaz.enigma.utils.Utils;
 
@@ -123,6 +124,9 @@ public class Enigma {
 					.forEach(plugin -> plugin.get().init(pluginContext));
 
 			EnigmaServices services = pluginContext.buildServices();
+
+			I18n.initialize(services);
+
 			return new Enigma(profile, services);
 		}
 	}

@@ -43,7 +43,6 @@ import javax.swing.WindowConstants;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import cuchaz.enigma.Enigma;
-import cuchaz.enigma.EnigmaProfile;
 import cuchaz.enigma.analysis.EntryReference;
 import cuchaz.enigma.gui.config.Themes;
 import cuchaz.enigma.gui.config.UiConfig;
@@ -123,9 +122,9 @@ public class Gui {
 	public final JFileChooser exportJarFileChooser = new JFileChooser();
 	public SearchDialog searchDialog;
 
-	public Gui(EnigmaProfile profile, Set<EditableType> editableTypes) {
+	public Gui(Enigma enigma, Set<EditableType> editableTypes) {
 		this.editableTypes = editableTypes;
-		this.controller = new GuiController(this, profile);
+		this.controller = new GuiController(this, enigma);
 		this.structurePanel = new StructurePanel(this);
 		this.deobfPanel = new DeobfPanel(this);
 		this.infoPanel = new IdentifierPanel(this);
