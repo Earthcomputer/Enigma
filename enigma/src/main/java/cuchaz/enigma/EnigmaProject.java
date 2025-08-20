@@ -25,6 +25,8 @@ import cuchaz.enigma.analysis.EntryReference;
 import cuchaz.enigma.analysis.index.JarIndex;
 import cuchaz.enigma.api.service.NameProposalService;
 import cuchaz.enigma.api.service.ObfuscationTestService;
+import cuchaz.enigma.api.view.ProjectView;
+import cuchaz.enigma.api.view.entry.EntryView;
 import cuchaz.enigma.bytecode.translators.TranslationClassVisitor;
 import cuchaz.enigma.classprovider.ClassProvider;
 import cuchaz.enigma.classprovider.ObfuscationFixClassProvider;
@@ -32,6 +34,7 @@ import cuchaz.enigma.source.Decompiler;
 import cuchaz.enigma.source.DecompilerService;
 import cuchaz.enigma.source.SourceSettings;
 import cuchaz.enigma.translation.ProposingTranslator;
+import cuchaz.enigma.translation.Translatable;
 import cuchaz.enigma.translation.Translator;
 import cuchaz.enigma.translation.mapping.EntryMapping;
 import cuchaz.enigma.translation.mapping.EntryRemapper;
@@ -45,7 +48,7 @@ import cuchaz.enigma.translation.representation.entry.LocalVariableEntry;
 import cuchaz.enigma.translation.representation.entry.MethodEntry;
 import cuchaz.enigma.utils.I18n;
 
-public class EnigmaProject {
+public class EnigmaProject implements ProjectView {
 	private final Enigma enigma;
 
 	private final List<Path> jarPaths;
@@ -321,6 +324,12 @@ public class EnigmaProject {
 		private String decompileClass(ClassNode translatedNode, Decompiler decompiler) {
 			return decompiler.getSource(translatedNode.name, mapper).asString();
 		}
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public <T extends EntryView> T deobfuscate(T entry) {
+		return (T) mapper.extendedDeobfuscate((Translatable) entry).getValue();
 	}
 
 	public static final class SourceExport {

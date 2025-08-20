@@ -17,13 +17,14 @@ import javax.annotation.Nonnull;
 
 import com.google.common.base.Preconditions;
 
+import cuchaz.enigma.api.view.entry.MethodEntryView;
 import cuchaz.enigma.source.RenamableTokenType;
 import cuchaz.enigma.translation.TranslateResult;
 import cuchaz.enigma.translation.Translator;
 import cuchaz.enigma.translation.mapping.EntryMapping;
 import cuchaz.enigma.translation.representation.MethodDescriptor;
 
-public class MethodEntry extends ParentedEntry<ClassEntry> implements Comparable<MethodEntry> {
+public class MethodEntry extends ParentedEntry<ClassEntry> implements Comparable<MethodEntry>, MethodEntryView {
 	protected final MethodDescriptor descriptor;
 
 	public MethodEntry(ClassEntry parent, String name, MethodDescriptor descriptor) {
@@ -50,6 +51,11 @@ public class MethodEntry extends ParentedEntry<ClassEntry> implements Comparable
 
 	public MethodDescriptor getDesc() {
 		return this.descriptor;
+	}
+
+	@Override
+	public String getDescriptor() {
+		return descriptor.toString();
 	}
 
 	public boolean isConstructor() {

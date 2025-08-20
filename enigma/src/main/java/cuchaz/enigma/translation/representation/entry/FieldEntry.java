@@ -17,13 +17,14 @@ import javax.annotation.Nonnull;
 
 import com.google.common.base.Preconditions;
 
+import cuchaz.enigma.api.view.entry.FieldEntryView;
 import cuchaz.enigma.source.RenamableTokenType;
 import cuchaz.enigma.translation.TranslateResult;
 import cuchaz.enigma.translation.Translator;
 import cuchaz.enigma.translation.mapping.EntryMapping;
 import cuchaz.enigma.translation.representation.TypeDescriptor;
 
-public class FieldEntry extends ParentedEntry<ClassEntry> implements Comparable<FieldEntry> {
+public class FieldEntry extends ParentedEntry<ClassEntry> implements Comparable<FieldEntry>, FieldEntryView {
 	protected final TypeDescriptor desc;
 
 	public FieldEntry(ClassEntry parent, String name, TypeDescriptor desc) {
@@ -50,6 +51,11 @@ public class FieldEntry extends ParentedEntry<ClassEntry> implements Comparable<
 
 	public TypeDescriptor getDesc() {
 		return this.desc;
+	}
+
+	@Override
+	public String getDescriptor() {
+		return this.desc.toString();
 	}
 
 	@Override
