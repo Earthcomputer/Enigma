@@ -40,4 +40,11 @@ public class CombiningClassProvider implements ClassProvider {
 
 		return null;
 	}
+
+	@Override
+	public void invalidateCache() {
+		for (ClassProvider classProvider : classProviders) {
+			classProvider.invalidateCache();
+		}
+	}
 }

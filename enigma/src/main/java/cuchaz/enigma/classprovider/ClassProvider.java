@@ -21,4 +21,6 @@ public interface ClassProvider {
 	 */
 	@Nullable
 	ClassNode get(String name);
+
+	void invalidateCache();
 }

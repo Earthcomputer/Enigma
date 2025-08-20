@@ -15,6 +15,8 @@ import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
@@ -216,6 +218,13 @@ public class Gui {
 
 		JFrame frame = this.mainWindow.frame();
 		frame.addWindowListener(GuiUtil.onWindowClose(e -> this.close()));
+
+		frame.addWindowFocusListener(new WindowAdapter() {
+			@Override
+			public void windowGainedFocus(WindowEvent e) {
+				controller.processDataInvalidations();
+			}
+		});
 
 		frame.setSize(UiConfig.getWindowSize("Main Window", ScaleUtil.getDimension(1024, 576)));
 		frame.setExtendedState(UiConfig.isFullscreen("Main Window") ? JFrame.MAXIMIZED_BOTH : JFrame.NORMAL);

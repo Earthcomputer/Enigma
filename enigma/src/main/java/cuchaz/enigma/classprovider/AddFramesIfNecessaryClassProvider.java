@@ -46,4 +46,9 @@ public class AddFramesIfNecessaryClassProvider implements ClassProvider {
 		cr.accept(node, 0);
 		return node;
 	}
+
+	@Override
+	public void invalidateCache() {
+		delegate.invalidateCache();
+	}
 }

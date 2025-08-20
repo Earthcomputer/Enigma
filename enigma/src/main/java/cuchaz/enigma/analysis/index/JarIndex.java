@@ -71,7 +71,7 @@ public class JarIndex implements JarIndexer {
 		return new JarIndex(entryIndex, inheritanceIndex, referenceIndex, bridgeMethodIndex, packageVisibilityIndex);
 	}
 
-	public ClassProvider indexJar(Set<String> classNames, ClassProvider classProvider, ProgressListener progress) {
+	public ClassProvider indexJar(Collection<String> classNames, ClassProvider classProvider, ProgressListener progress) {
 		indexedClasses.addAll(classNames);
 		progress.init(4, I18n.translate("progress.jar.indexing"));
 

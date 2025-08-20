@@ -35,4 +35,9 @@ public class TransformingClassProvider implements ClassProvider {
 
 		return classNode;
 	}
+
+	@Override
+	public void invalidateCache() {
+		delegate.invalidateCache();
+	}
 }

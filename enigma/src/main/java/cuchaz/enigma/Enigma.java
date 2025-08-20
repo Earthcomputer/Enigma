@@ -26,14 +26,12 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableListMultimap;
 import org.objectweb.asm.Opcodes;
 
-import cuchaz.enigma.analysis.index.JarIndex;
 import cuchaz.enigma.api.EnigmaPlugin;
 import cuchaz.enigma.api.EnigmaPluginContext;
 import cuchaz.enigma.api.Ordering;
 import cuchaz.enigma.api.service.EnigmaService;
 import cuchaz.enigma.api.service.EnigmaServiceFactory;
 import cuchaz.enigma.api.service.EnigmaServiceType;
-import cuchaz.enigma.api.service.JarIndexerService;
 import cuchaz.enigma.classprovider.CachingClassProvider;
 import cuchaz.enigma.classprovider.ClassProvider;
 import cuchaz.enigma.classprovider.CombiningClassProvider;
@@ -73,13 +71,10 @@ public class Enigma {
 		ClassProvider jarClassProvider = getJarClassProvider(paths);
 		TransformingClassProvider transformingClassProvider = new TransformingClassProvider(jarClassProvider, services);
 		ClassProvider classProvider = new CachingClassProvider(new CombiningClassProvider(transformingClassProvider, libraryClassProvider));
-		Set<String> scope = Set.copyOf(jarClassProvider.getClassNames());
 
-		JarIndex index = JarIndex.empty();
-		ClassProvider classProviderWithFrames = index.indexJar(scope, classProvider, progress);
-		services.get(JarIndexerService.TYPE).forEach(indexer -> indexer.acceptJar(scope, classProviderWithFrames, index));
-
-		return new EnigmaProject(this, paths, classProvider, index, Utils.zipSha1(paths.toArray(new Path[0])));
+		EnigmaProject project = new EnigmaProject(this, paths, classProvider, jarClassProvider.getClassNames(), Utils.zipSha1(paths.toArray(new Path[0])));
+		project.invalidateClasses(progress, Runnable::run);
+		return project;
 	}
 
 	private ClassProvider getJarClassProvider(List<Path> jars) throws IOException {

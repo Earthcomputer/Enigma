@@ -6,11 +6,13 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.stream.Collectors;
@@ -18,11 +20,15 @@ import java.util.stream.Stream;
 
 import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
+import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.ClassNode;
 
 import cuchaz.enigma.analysis.EntryReference;
 import cuchaz.enigma.analysis.index.JarIndex;
+import cuchaz.enigma.api.DataInvalidationEvent;
+import cuchaz.enigma.api.DataInvalidationListener;
+import cuchaz.enigma.api.service.JarIndexerService;
 import cuchaz.enigma.api.service.NameProposalService;
 import cuchaz.enigma.api.service.ObfuscationTestService;
 import cuchaz.enigma.api.view.ProjectView;
@@ -52,24 +58,53 @@ public class EnigmaProject implements ProjectView {
 	private final Enigma enigma;
 
 	private final List<Path> jarPaths;
-	private final ClassProvider classProvider;
-	private final JarIndex jarIndex;
+	private final ClassProvider originalClassProvider;
+	private final Collection<String> projectClasses; // non-library classes
+	private ClassProvider classProvider;
+	private JarIndex jarIndex;
 	private final byte[] jarChecksum;
 
+	private EntryTree<EntryMapping> mappings;
 	private EntryRemapper mapper;
 
-	public EnigmaProject(Enigma enigma, List<Path> jarPaths, ClassProvider classProvider, JarIndex jarIndex, byte[] jarChecksum) {
+	private final List<DataInvalidationListener> dataInvalidationListeners = new ArrayList<>();
+	private boolean reindexOnClassInvalidation = true;
+
+	public EnigmaProject(Enigma enigma, List<Path> jarPaths, ClassProvider classProvider, Collection<String> projectClasses, byte[] jarChecksum) {
 		Preconditions.checkArgument(jarChecksum.length == 20);
 		this.enigma = enigma;
 		this.jarPaths = List.copyOf(jarPaths);
-		this.classProvider = classProvider;
-		this.jarIndex = jarIndex;
+		this.originalClassProvider = classProvider;
+		this.projectClasses = projectClasses;
 		this.jarChecksum = jarChecksum;
 
-		this.mapper = EntryRemapper.empty(jarIndex);
+		dataInvalidationListeners.add(event -> {
+			if (reindexOnClassInvalidation && event.getType() == DataInvalidationEvent.InvalidationType.CLASS) {
+				invalidateClasses(ProgressListener.none(), Runnable::run);
+			}
+		});
+	}
+
+	public void setReindexOnClassInvalidation(boolean reindexOnClassInvalidation) {
+		this.reindexOnClassInvalidation = reindexOnClassInvalidation;
+	}
+
+	public void invalidateClasses(ProgressListener progress, Consumer<Runnable> onThreadExecutor) {
+		originalClassProvider.invalidateCache();
+		JarIndex index = JarIndex.empty();
+		ClassProvider classProviderWithFrames = index.indexJar(projectClasses, originalClassProvider, progress);
+		enigma.getServices().get(JarIndexerService.TYPE).forEach(indexer -> indexer.acceptJar(projectClasses, classProviderWithFrames, index));
+
+		onThreadExecutor.accept(() -> {
+			this.classProvider = classProviderWithFrames;
+			this.jarIndex = index;
+			setMappings(this.mappings);
+		});
 	}
 
 	public void setMappings(EntryTree<EntryMapping> mappings) {
+		this.mappings = mappings;
+
 		if (mappings != null) {
 			mapper = EntryRemapper.mapped(jarIndex, mappings);
 		} else {
@@ -287,6 +322,10 @@ public class EnigmaProject implements ProjectView {
 				public ClassNode get(String name) {
 					return compiled.get(name);
 				}
+
+				@Override
+				public void invalidateCache() {
+				}
 			}, new SourceSettings(false, false));
 
 			AtomicInteger count = new AtomicInteger();
@@ -330,6 +369,29 @@ public class EnigmaProject implements ProjectView {
 	@SuppressWarnings("unchecked")
 	public <T extends EntryView> T deobfuscate(T entry) {
 		return (T) mapper.extendedDeobfuscate((Translatable) entry).getValue();
+	}
+
+	@Override
+	public void addDataInvalidationListener(DataInvalidationListener listener) {
+		dataInvalidationListeners.add(listener);
+	}
+
+	@Override
+	public void invalidateData(@Nullable Collection<String> classes, DataInvalidationEvent.InvalidationType type) {
+		DataInvalidationEvent event = new DataInvalidationEvent() {
+			@Override
+			@Nullable
+			public Collection<String> getClasses() {
+				return classes;
+			}
+
+			@Override
+			public InvalidationType getType() {
+				return type;
+			}
+		};
+
+		dataInvalidationListeners.forEach(l -> l.onDataInvalidated(event));
 	}
 
 	public static final class SourceExport {

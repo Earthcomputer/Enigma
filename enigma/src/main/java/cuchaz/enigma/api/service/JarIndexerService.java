@@ -1,7 +1,6 @@
 package cuchaz.enigma.api.service;
 
 import java.util.Collection;
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -14,7 +13,7 @@ import cuchaz.enigma.classprovider.ClassProvider;
 public interface JarIndexerService extends EnigmaService {
 	EnigmaServiceType<JarIndexerService> TYPE = EnigmaServiceType.create("jar_indexer");
 
-	void acceptJar(Set<String> scope, ClassProvider classProvider, JarIndex jarIndex);
+	void acceptJar(Collection<String> scope, ClassProvider classProvider, JarIndex jarIndex);
 
 	static JarIndexerService fromVisitor(ClassVisitor visitor) {
 		return (scope, classProvider, jarIndex) -> {

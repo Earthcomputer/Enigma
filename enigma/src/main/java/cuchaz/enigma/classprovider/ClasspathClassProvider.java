@@ -34,4 +34,8 @@ public class ClasspathClassProvider implements ClassProvider {
 			return null;
 		}
 	}
+
+	@Override
+	public void invalidateCache() {
+	}
 }

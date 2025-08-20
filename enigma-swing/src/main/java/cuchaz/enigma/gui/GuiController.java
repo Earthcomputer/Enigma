@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -46,6 +47,7 @@ import cuchaz.enigma.analysis.MethodInheritanceTreeNode;
 import cuchaz.enigma.analysis.MethodReferenceTreeNode;
 import cuchaz.enigma.analysis.StructureTreeNode;
 import cuchaz.enigma.analysis.StructureTreeOptions;
+import cuchaz.enigma.api.DataInvalidationEvent;
 import cuchaz.enigma.api.service.ObfuscationTestService;
 import cuchaz.enigma.api.view.GuiView;
 import cuchaz.enigma.api.view.entry.EntryReferenceView;
@@ -113,6 +115,12 @@ public class GuiController implements ClientPacketHandler, GuiView {
 
 	private History<EntryReference<Entry<?>, Entry<?>>> referenceHistory;
 
+	@Nullable
+	private DataInvalidationEvent.InvalidationType dataInvalidatedType;
+	@Nullable
+	private Set<String> invalidatedClasses;
+	private boolean isInvalidating = false;
+
 	public GuiController(Gui gui, Enigma enigma) {
 		this.gui = gui;
 		this.enigma = enigma;
@@ -132,8 +140,10 @@ public class GuiController implements ClientPacketHandler, GuiView {
 
 		return ProgressDialog.runOffThread(gui.getFrame(), progress -> {
 			project = enigma.openJars(jarPaths, new ClasspathClassProvider(), progress);
+			project.setReindexOnClassInvalidation(false); // we'll reindex ourselves
 			indexTreeBuilder = new IndexTreeBuilder(project.getJarIndex());
 			chp = new ClassHandleProvider(project, UiConfig.getDecompiler().service);
+			addDataInvalidationListener();
 			SwingUtilities.invokeLater(() -> {
 				gui.onFinishOpenJar(getFileNames(jarPaths));
 				refreshClasses();
@@ -176,8 +186,7 @@ public class GuiController implements ClientPacketHandler, GuiView {
 				loadedMappingFormat = format;
 				loadedMappingPath = path;
 
-				refreshClasses();
-				chp.invalidateJavadoc();
+				project.invalidateData(null, DataInvalidationEvent.InvalidationType.JAVADOC);
 			} catch (MappingParseException e) {
 				JOptionPane.showMessageDialog(gui.getFrame(), e.getMessage());
 			}
@@ -191,8 +200,7 @@ public class GuiController implements ClientPacketHandler, GuiView {
 		}
 
 		project.setMappings(mappings);
-		refreshClasses();
-		chp.invalidateJavadoc();
+		project.invalidateData(null, DataInvalidationEvent.InvalidationType.JAVADOC);
 	}
 
 	public MappingFormat getLoadedMappingFormat() {
@@ -251,8 +259,7 @@ public class GuiController implements ClientPacketHandler, GuiView {
 		project.setMappings(null);
 
 		this.gui.setMappingsFile(null);
-		refreshClasses();
-		chp.invalidateJavadoc();
+		project.invalidateData(null, DataInvalidationEvent.InvalidationType.JAVADOC);
 	}
 
 	public void reloadAll() {
@@ -275,6 +282,78 @@ public class GuiController implements ClientPacketHandler, GuiView {
 		if (loadedMappingFormat != null && loadedMappingPath != null) {
 			this.closeMappings();
 			this.openMappings(loadedMappingFormat, loadedMappingPath);
+		}
+	}
+
+	private void addDataInvalidationListener() {
+		project.addDataInvalidationListener(event -> {
+			if (dataInvalidatedType == null || event.getType().ordinal() > dataInvalidatedType.ordinal()) {
+				dataInvalidatedType = event.getType();
+			}
+
+			if (event.getClasses() == null) {
+				invalidatedClasses = null;
+			} else {
+				if (invalidatedClasses == null) {
+					invalidatedClasses = new HashSet<>(event.getClasses());
+				} else {
+					invalidatedClasses.addAll(event.getClasses());
+				}
+			}
+
+			if (gui.getFrame().hasFocus()) {
+				processDataInvalidations();
+			}
+		});
+	}
+
+	public void processDataInvalidations() {
+		if (dataInvalidatedType == null || isInvalidating) {
+			return;
+		}
+
+		isInvalidating = true;
+
+		DataInvalidationEvent.InvalidationType dataInvalidatedType = this.dataInvalidatedType;
+		Set<String> invalidatedClasses = this.invalidatedClasses;
+
+		this.dataInvalidatedType = null;
+		this.invalidatedClasses = null;
+
+		Runnable refreshAction = () -> {
+			if (invalidatedClasses == null) {
+				switch (dataInvalidatedType) {
+				case MAPPINGS -> chp.invalidateMapped();
+				case JAVADOC -> chp.invalidateJavadoc();
+				case CLASS -> chp.invalidate();
+				}
+			} else {
+				for (String invalidatedClass : invalidatedClasses) {
+					switch (dataInvalidatedType) {
+					case MAPPINGS -> chp.invalidateMapped(new ClassEntry(invalidatedClass));
+					case JAVADOC -> chp.invalidateJavadoc(new ClassEntry(invalidatedClass));
+					case CLASS -> chp.invalidate(new ClassEntry(invalidatedClass));
+					}
+				}
+			}
+
+			refreshClasses();
+
+			isInvalidating = false;
+			// further invalidations may have been sent through
+			processDataInvalidations();
+		};
+
+		if (dataInvalidatedType == DataInvalidationEvent.InvalidationType.CLASS) {
+			ProgressDialog.runOffThread(gui.getFrame(), progress -> {
+				project.invalidateClasses(progress, SwingUtilities::invokeLater);
+			}).whenComplete((v, t) -> {
+				if (t == null) {
+					SwingUtilities.invokeLater(refreshAction);
+				}
+			});
+		} else {
+			refreshAction.run();
 		}
 	}
 

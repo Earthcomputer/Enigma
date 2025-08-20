@@ -36,4 +36,9 @@ public class CachingClassProvider implements ClassProvider {
 			throw new RuntimeException(e);
 		}
 	}
+
+	@Override
+	public void invalidateCache() {
+		cache.invalidateAll();
+	}
 }

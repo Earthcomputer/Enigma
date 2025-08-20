@@ -64,6 +64,11 @@ public class ObfuscationFixClassProvider implements ClassProvider {
 		return fixedNode;
 	}
 
+	@Override
+	public void invalidateCache() {
+		classProvider.invalidateCache();
+	}
+
 	private void removeRedundantClassCalls(ClassNode node) {
 		// Removes .getClass() calls added by Proguard:
 		// DUP

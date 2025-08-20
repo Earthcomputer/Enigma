@@ -19,7 +19,7 @@ import cuchaz.enigma.utils.AsmUtil;
  */
 public class JarClassProvider implements AutoCloseable, ClassProvider {
 	private final FileSystem fileSystem;
-	private final Set<String> classNames;
+	private Set<String> classNames;
 
 	public JarClassProvider(Path jarPath) throws IOException {
 		this.fileSystem = FileSystems.newFileSystem(jarPath, (ClassLoader) null);
@@ -58,6 +58,10 @@ public class JarClassProvider implements AutoCloseable, ClassProvider {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	@Override
+	public void invalidateCache() {
 	}
 
 	@Override
