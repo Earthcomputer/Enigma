@@ -372,6 +372,17 @@ public class EnigmaProject implements ProjectView {
 	}
 
 	@Override
+	public Collection<String> getProjectClasses() {
+		return projectClasses;
+	}
+
+	@Override
+	@Nullable
+	public ClassNode getBytecode(String className) {
+		return classProvider.get(className);
+	}
+
+	@Override
 	public void addDataInvalidationListener(DataInvalidationListener listener) {
 		dataInvalidationListeners.add(listener);
 	}

@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
@@ -130,6 +131,11 @@ public class GuiController implements ClientPacketHandler, GuiView {
 	@Override
 	public EnigmaProject getProject() {
 		return project;
+	}
+
+	@Override
+	public JFrame getFrame() {
+		return gui.getFrame();
 	}
 
 	public boolean isDirty() {
