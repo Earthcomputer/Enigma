@@ -29,6 +29,7 @@ import org.objectweb.asm.Opcodes;
 import cuchaz.enigma.api.EnigmaPlugin;
 import cuchaz.enigma.api.EnigmaPluginContext;
 import cuchaz.enigma.api.Ordering;
+import cuchaz.enigma.api.service.ClassTransformerService;
 import cuchaz.enigma.api.service.EnigmaService;
 import cuchaz.enigma.api.service.EnigmaServiceFactory;
 import cuchaz.enigma.api.service.EnigmaServiceType;
@@ -38,6 +39,8 @@ import cuchaz.enigma.classprovider.ClassProvider;
 import cuchaz.enigma.classprovider.CombiningClassProvider;
 import cuchaz.enigma.classprovider.JarClassProvider;
 import cuchaz.enigma.classprovider.TransformingClassProvider;
+import cuchaz.enigma.translation.mapping.serde.MappingFormat;
+import cuchaz.enigma.translation.mapping.serde.MappingParseException;
 import cuchaz.enigma.utils.I18n;
 import cuchaz.enigma.utils.OrderingImpl;
 import cuchaz.enigma.utils.Utils;
@@ -69,16 +72,66 @@ public class Enigma {
 	}
 
 	public EnigmaProject openJars(List<Path> paths, ClassProvider libraryClassProvider, ProgressListener progress) throws IOException {
-		return openJars(paths, libraryClassProvider, progress, true);
+		try {
+			return openJarsAndMappings(paths, libraryClassProvider, null, null, progress);
+		} catch (MappingParseException e) {
+			throw new AssertionError("No mappings, so no parse exception should happen", e);
+		}
 	}
 
-	public EnigmaProject openJars(List<Path> paths, ClassProvider libraryClassProvider, ProgressListener progress, boolean callServices) throws IOException {
+	public EnigmaProject openJarsAndMappings(
+			List<Path> paths,
+			ClassProvider libraryClassProvider,
+			MappingFormat mappingFormat,
+			Path mappingsPath,
+			ProgressListener progress
+	) throws IOException, MappingParseException {
+		return openJarsAndMappings(paths, libraryClassProvider, mappingFormat, mappingsPath, progress, true);
+	}
+
+	public EnigmaProject openJarsAndMappings(
+			List<Path> paths,
+			ClassProvider libraryClassProvider,
+			MappingFormat mappingFormat,
+			Path mappingsPath,
+			ProgressListener progress,
+			boolean callServices
+	) throws IOException, MappingParseException {
 		ClassProvider jarClassProvider = getJarClassProvider(paths);
-		TransformingClassProvider transformingClassProvider = new TransformingClassProvider(jarClassProvider, services);
-		ClassProvider classProvider = new CachingClassProvider(new CombiningClassProvider(transformingClassProvider, libraryClassProvider));
+		ClassProvider allClassesProvider = new CombiningClassProvider(jarClassProvider, libraryClassProvider);
+
+		ClassProvider classProvider = new CachingClassProvider(allClassesProvider);
 
 		EnigmaProject project = new EnigmaProject(this, paths, classProvider, jarClassProvider.getClassNames(), Utils.zipSha1(paths.toArray(new Path[0])));
-		project.invalidateClasses(progress, Runnable::run);
+		IOException[] mappingsIOException = { null };
+		MappingParseException[] mappingsParseException = { null };
+		project.invalidateClasses(reducedIndex -> {
+			if (mappingsPath != null) {
+				try {
+					project.setMappings(mappingFormat.read(mappingsPath, progress.fork(), profile.getMappingSaveParameters(), reducedIndex), reducedIndex);
+				} catch (IOException e) {
+					mappingsIOException[0] = e;
+					return allClassesProvider;
+				} catch (MappingParseException e) {
+					mappingsParseException[0] = e;
+					return allClassesProvider;
+				}
+			}
+
+			ClassProvider transformedProvider = allClassesProvider;
+
+			for (ClassTransformerService transformerService : services.get(ClassTransformerService.TYPE)) {
+				transformedProvider = new TransformingClassProvider(transformedProvider, transformerService, project.getMapper());
+			}
+
+			return transformedProvider;
+		}, progress, Runnable::run);
+
+		if (mappingsIOException[0] != null) {
+			throw mappingsIOException[0];
+		} else if (mappingsParseException[0] != null) {
+			throw mappingsParseException[0];
+		}
 
 		if (callServices) {
 			for (ProjectService projectService : services.get(ProjectService.TYPE)) {

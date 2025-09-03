@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 
 import javax.annotation.Nonnull;
 
-import cuchaz.enigma.analysis.index.JarIndex;
+import cuchaz.enigma.analysis.index.ReducedJarIndex;
 import cuchaz.enigma.translation.MappingTranslator;
 import cuchaz.enigma.translation.Translatable;
 import cuchaz.enigma.translation.TranslateResult;
@@ -27,11 +27,11 @@ public class EntryRemapper {
 
 	private final EntryResolver obfResolver;
 	private final Translator deobfuscator;
-	private final JarIndex jarIndex;
+	private final ReducedJarIndex jarIndex;
 
 	private final MappingValidator validator;
 
-	private EntryRemapper(JarIndex jarIndex, EntryTree<EntryMapping> obfToDeobf) {
+	private EntryRemapper(ReducedJarIndex jarIndex, EntryTree<EntryMapping> obfToDeobf) {
 		this.obfToDeobf = new DeltaTrackingTree<>(obfToDeobf);
 
 		this.obfResolver = jarIndex.getEntryResolver();
@@ -42,11 +42,11 @@ public class EntryRemapper {
 		this.validator = new MappingValidator(obfToDeobf, deobfuscator, jarIndex);
 	}
 
-	public static EntryRemapper mapped(JarIndex index, EntryTree<EntryMapping> obfToDeobf) {
+	public static EntryRemapper mapped(ReducedJarIndex index, EntryTree<EntryMapping> obfToDeobf) {
 		return new EntryRemapper(index, obfToDeobf);
 	}
 
-	public static EntryRemapper empty(JarIndex index) {
+	public static EntryRemapper empty(ReducedJarIndex index) {
 		return new EntryRemapper(index, new HashEntryTree<>());
 	}
 

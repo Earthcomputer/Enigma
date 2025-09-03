@@ -13,7 +13,7 @@ package cuchaz.enigma.analysis;
 
 import cuchaz.enigma.analysis.index.EntryIndex;
 import cuchaz.enigma.analysis.index.InheritanceIndex;
-import cuchaz.enigma.analysis.index.JarIndex;
+import cuchaz.enigma.analysis.index.ReducedJarIndex;
 import cuchaz.enigma.translation.Translator;
 import cuchaz.enigma.translation.representation.entry.ClassEntry;
 import cuchaz.enigma.translation.representation.entry.MethodEntry;
@@ -64,7 +64,7 @@ public class MethodInheritanceTreeNode extends MethodTreeNode {
 	/**
 	 * Returns true if there is sub-node worthy to display.
 	 */
-	public boolean load(JarIndex index) {
+	public boolean load(ReducedJarIndex index) {
 		// get all the child nodes
 		EntryIndex entryIndex = index.getEntryIndex();
 		InheritanceIndex inheritanceIndex = index.getInheritanceIndex();

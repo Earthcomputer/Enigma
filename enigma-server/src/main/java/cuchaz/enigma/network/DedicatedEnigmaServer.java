@@ -90,31 +90,23 @@ public class DedicatedEnigmaServer extends EnigmaServer {
 
 			EnigmaProfile profile = EnigmaProfile.read(profileFile);
 			Enigma enigma = Enigma.builder().setProfile(profile).build();
-			System.out.println("Indexing Jar...");
-			EnigmaProject project = enigma.openJars(jars, new ClasspathClassProvider(), ProgressListener.none());
 
-			MappingFormat mappingFormat = MappingFormat.ENIGMA_DIRECTORY;
-			EntryRemapper mappings;
+			MappingFormat mappingFormat;
 
-			if (!Files.exists(mappingsFile)) {
-				mappings = EntryRemapper.empty(project.getJarIndex());
+			if (Files.isDirectory(mappingsFile)) {
+				mappingFormat = MappingFormat.ENIGMA_DIRECTORY;
+			} else if ("zip".equalsIgnoreCase(MoreFiles.getFileExtension(mappingsFile))) {
+				mappingFormat = MappingFormat.ENIGMA_ZIP;
 			} else {
-				System.out.println("Reading mappings...");
-
-				if (Files.isDirectory(mappingsFile)) {
-					mappingFormat = MappingFormat.ENIGMA_DIRECTORY;
-				} else if ("zip".equalsIgnoreCase(MoreFiles.getFileExtension(mappingsFile))) {
-					mappingFormat = MappingFormat.ENIGMA_ZIP;
-				} else {
-					mappingFormat = MappingFormat.ENIGMA_FILE;
-				}
-
-				mappings = EntryRemapper.mapped(project.getJarIndex(), mappingFormat.read(mappingsFile, ProgressListener.none(), profile.getMappingSaveParameters(), project.getJarIndex()));
+				mappingFormat = MappingFormat.ENIGMA_FILE;
 			}
+
+			System.out.println("Indexing Jar...");
+			EnigmaProject project = enigma.openJarsAndMappings(jars, new ClasspathClassProvider(), mappingFormat, mappingsFile, ProgressListener.none());
 
 			PrintWriter log = new PrintWriter(Files.newBufferedWriter(logFile));
 
-			server = new DedicatedEnigmaServer(checksum, password, profile, mappingFormat, mappingsFile, log, mappings, port);
+			server = new DedicatedEnigmaServer(checksum, password, profile, mappingFormat, mappingsFile, log, project.getMapper(), port);
 			server.start();
 			System.out.println("Server started");
 		} catch (IOException | MappingParseException e) {

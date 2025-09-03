@@ -7,10 +7,10 @@ import org.objectweb.asm.tree.ClassNode;
 
 import cuchaz.enigma.api.DataInvalidationEvent;
 import cuchaz.enigma.api.DataInvalidationListener;
-import cuchaz.enigma.api.view.entry.EntryView;
+import cuchaz.enigma.api.view.entry.MapperView;
 
 public interface ProjectView {
-	<T extends EntryView> T deobfuscate(T entry);
+	MapperView getMapper();
 
 	Collection<String> getProjectClasses();
 

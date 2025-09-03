@@ -17,7 +17,7 @@ import java.util.List;
 import com.google.common.collect.Lists;
 
 import cuchaz.enigma.analysis.index.InheritanceIndex;
-import cuchaz.enigma.analysis.index.JarIndex;
+import cuchaz.enigma.analysis.index.ReducedJarIndex;
 import cuchaz.enigma.translation.Translator;
 import cuchaz.enigma.translation.representation.entry.ClassEntry;
 import cuchaz.enigma.translation.representation.entry.MethodEntry;
@@ -50,7 +50,7 @@ public class ClassImplementationsTreeNode extends ClassTreeNode {
 		return translator.translate(this.getClassEntry()).toString();
 	}
 
-	public void load(JarIndex index) {
+	public void load(ReducedJarIndex index) {
 		// get all method implementations
 		List<ClassImplementationsTreeNode> nodes = Lists.newArrayList();
 		InheritanceIndex inheritanceIndex = index.getInheritanceIndex();

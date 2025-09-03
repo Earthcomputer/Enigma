@@ -142,11 +142,21 @@ public class GuiController implements ClientPacketHandler, GuiView {
 		return project != null && project.getMapper().isDirty();
 	}
 
-	public CompletableFuture<Void> openJar(final List<Path> jarPaths) {
+	public CompletableFuture<Void> openJars(final List<Path> jarPaths) {
+		return openJarsAndMappings(jarPaths, null, null);
+	}
+
+	public CompletableFuture<Void> openJarsAndMappings(final List<Path> jarPaths, final MappingFormat mappingFormat, final Path mappingsPath) {
 		this.gui.onStartOpenJar();
 
 		return ProgressDialog.runOffThread(gui.getFrame(), progress -> {
-			project = enigma.openJars(jarPaths, new ClasspathClassProvider(), progress, false);
+			try {
+				project = enigma.openJarsAndMappings(jarPaths, new ClasspathClassProvider(), mappingFormat, mappingsPath, progress, false);
+			} catch (MappingParseException e) {
+				SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(gui.getFrame(), e.getMessage()));
+				return;
+			}
+
 			project.setReindexOnClassInvalidation(false); // we'll reindex ourselves
 			indexTreeBuilder = new IndexTreeBuilder(project.getJarIndex());
 			chp = new ClassHandleProvider(project, UiConfig.getDecompiler().service);
@@ -157,6 +167,11 @@ public class GuiController implements ClientPacketHandler, GuiView {
 				}
 
 				gui.onFinishOpenJar(getFileNames(jarPaths));
+
+				gui.setMappingsFile(mappingsPath);
+				loadedMappingFormat = mappingFormat;
+				loadedMappingPath = mappingsPath;
+
 				refreshClasses();
 			});
 		});
@@ -283,7 +298,7 @@ public class GuiController implements ClientPacketHandler, GuiView {
 		Path loadedMappingPath = this.loadedMappingPath;
 
 		this.closeJar();
-		CompletableFuture<Void> f = this.openJar(jarPaths);
+		CompletableFuture<Void> f = this.openJars(jarPaths);
 
 		if (loadedMappingFormat != null && loadedMappingPath != null) {
 			f.whenComplete((v, t) -> this.openMappings(loadedMappingFormat, loadedMappingPath));
@@ -361,7 +376,7 @@ public class GuiController implements ClientPacketHandler, GuiView {
 
 		if (dataInvalidatedType == DataInvalidationEvent.InvalidationType.CLASS) {
 			ProgressDialog.runOffThread(gui.getFrame(), progress -> {
-				project.invalidateClasses(progress, SwingUtilities::invokeLater);
+				project.invalidateClasses(null, progress, SwingUtilities::invokeLater);
 			}).whenComplete((v, t) -> {
 				if (t == null) {
 					SwingUtilities.invokeLater(refreshAction);

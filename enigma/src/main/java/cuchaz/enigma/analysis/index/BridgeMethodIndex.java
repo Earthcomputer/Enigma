@@ -17,7 +17,7 @@ import cuchaz.enigma.translation.representation.entry.ClassEntry;
 import cuchaz.enigma.translation.representation.entry.MethodDefEntry;
 import cuchaz.enigma.translation.representation.entry.MethodEntry;
 
-public class BridgeMethodIndex implements JarIndexer {
+public class BridgeMethodIndex {
 	private final EntryIndex entryIndex;
 	private final InheritanceIndex inheritanceIndex;
 	private final ReferenceIndex referenceIndex;
@@ -44,10 +44,7 @@ public class BridgeMethodIndex implements JarIndexer {
 
 			indexSyntheticMethod(methodDefEntry, access);
 		}
-	}
 
-	@Override
-	public void processIndex(JarIndex index) {
 		Map<MethodEntry, MethodEntry> copiedAccessToBridge = new HashMap<>(specializedToBridge);
 
 		copiedAccessToBridge.entrySet().parallelStream().forEach(entry -> {

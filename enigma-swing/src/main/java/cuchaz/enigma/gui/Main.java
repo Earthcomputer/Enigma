@@ -139,20 +139,26 @@ public class Main {
 			}
 
 			if (options.has(jar)) {
-				List<Path> jarPaths = options.valuesOf(jar);
-				controller.openJar(jarPaths).whenComplete((v, t) -> {
-					if (options.has(mappings)) {
-						Path mappingsPath = options.valueOf(mappings);
+				MappingFormat mappingsFormat;
+				Path mappingsPath;
 
-						if (Files.isDirectory(mappingsPath)) {
-							controller.openMappings(MappingFormat.ENIGMA_DIRECTORY, mappingsPath);
-						} else if ("zip".equalsIgnoreCase(MoreFiles.getFileExtension(mappingsPath))) {
-							controller.openMappings(MappingFormat.ENIGMA_ZIP, mappingsPath);
-						} else {
-							controller.openMappings(MappingFormat.ENIGMA_FILE, mappingsPath);
-						}
+				if (options.has(mappings)) {
+					mappingsPath = options.valueOf(mappings);
+
+					if (Files.isDirectory(mappingsPath)) {
+						mappingsFormat = MappingFormat.ENIGMA_DIRECTORY;
+					} else if ("zip".equalsIgnoreCase(MoreFiles.getFileExtension(mappingsPath))) {
+						mappingsFormat = MappingFormat.ENIGMA_ZIP;
+					} else {
+						mappingsFormat = MappingFormat.ENIGMA_FILE;
 					}
-				});
+				} else {
+					mappingsFormat = null;
+					mappingsPath = null;
+				}
+
+				List<Path> jarPaths = options.valuesOf(jar);
+				controller.openJarsAndMappings(jarPaths, mappingsFormat, mappingsPath);
 			}
 		} catch (OptionException e) {
 			System.out.println("Invalid arguments: " + e.getMessage());

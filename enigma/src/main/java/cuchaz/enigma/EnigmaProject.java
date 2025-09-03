@@ -26,13 +26,13 @@ import org.objectweb.asm.tree.ClassNode;
 
 import cuchaz.enigma.analysis.EntryReference;
 import cuchaz.enigma.analysis.index.JarIndex;
+import cuchaz.enigma.analysis.index.ReducedJarIndex;
 import cuchaz.enigma.api.DataInvalidationEvent;
 import cuchaz.enigma.api.DataInvalidationListener;
 import cuchaz.enigma.api.service.JarIndexerService;
 import cuchaz.enigma.api.service.NameProposalService;
 import cuchaz.enigma.api.service.ObfuscationTestService;
 import cuchaz.enigma.api.view.ProjectView;
-import cuchaz.enigma.api.view.entry.EntryView;
 import cuchaz.enigma.bytecode.translators.TranslationClassVisitor;
 import cuchaz.enigma.classprovider.ClassProvider;
 import cuchaz.enigma.classprovider.ObfuscationFixClassProvider;
@@ -40,7 +40,6 @@ import cuchaz.enigma.source.Decompiler;
 import cuchaz.enigma.source.DecompilerService;
 import cuchaz.enigma.source.SourceSettings;
 import cuchaz.enigma.translation.ProposingTranslator;
-import cuchaz.enigma.translation.Translatable;
 import cuchaz.enigma.translation.Translator;
 import cuchaz.enigma.translation.mapping.EntryMapping;
 import cuchaz.enigma.translation.mapping.EntryRemapper;
@@ -60,6 +59,7 @@ public class EnigmaProject implements ProjectView {
 	private final List<Path> jarPaths;
 	private final ClassProvider originalClassProvider;
 	private final Collection<String> projectClasses; // non-library classes
+	private ClassProvider transformedClassProvider;
 	private ClassProvider classProvider;
 	private JarIndex jarIndex;
 	private final byte[] jarChecksum;
@@ -80,7 +80,7 @@ public class EnigmaProject implements ProjectView {
 
 		dataInvalidationListeners.add(event -> {
 			if (reindexOnClassInvalidation && event.getType() == DataInvalidationEvent.InvalidationType.CLASS) {
-				invalidateClasses(ProgressListener.none(), Runnable::run);
+				invalidateClasses(null, ProgressListener.none(), Runnable::run);
 			}
 		});
 	}
@@ -89,10 +89,24 @@ public class EnigmaProject implements ProjectView {
 		this.reindexOnClassInvalidation = reindexOnClassInvalidation;
 	}
 
-	public void invalidateClasses(ProgressListener progress, Consumer<Runnable> onThreadExecutor) {
-		originalClassProvider.invalidateCache();
+	public void invalidateClasses(@Nullable JarIndex.MidIndexAction midIndexAction, ProgressListener progress, Consumer<Runnable> onThreadExecutor) {
+		if (classProvider != null) {
+			classProvider.invalidateCache();
+		}
+
 		JarIndex index = JarIndex.empty();
-		ClassProvider classProviderWithFrames = index.indexJar(projectClasses, originalClassProvider, progress);
+		ClassProvider classProviderWithFrames = index.indexJar(
+				projectClasses,
+				originalClassProvider,
+				reducedIndex -> {
+					if (midIndexAction != null) {
+						this.transformedClassProvider = midIndexAction.run(reducedIndex);
+					}
+
+					return this.transformedClassProvider;
+				},
+				progress
+		);
 		enigma.getServices().get(JarIndexerService.TYPE).forEach(indexer -> indexer.acceptJar(projectClasses, classProviderWithFrames, index));
 
 		onThreadExecutor.accept(() -> {
@@ -103,6 +117,10 @@ public class EnigmaProject implements ProjectView {
 	}
 
 	public void setMappings(EntryTree<EntryMapping> mappings) {
+		setMappings(mappings, jarIndex);
+	}
+
+	void setMappings(EntryTree<EntryMapping> mappings, ReducedJarIndex jarIndex) {
 		this.mappings = mappings;
 
 		if (mappings != null) {
@@ -132,6 +150,7 @@ public class EnigmaProject implements ProjectView {
 		return jarChecksum;
 	}
 
+	@Override
 	public EntryRemapper getMapper() {
 		return mapper;
 	}
@@ -363,12 +382,6 @@ public class EnigmaProject implements ProjectView {
 		private String decompileClass(ClassNode translatedNode, Decompiler decompiler) {
 			return decompiler.getSource(translatedNode.name, mapper).asString();
 		}
-	}
-
-	@Override
-	@SuppressWarnings("unchecked")
-	public <T extends EntryView> T deobfuscate(T entry) {
-		return (T) mapper.extendedDeobfuscate((Translatable) entry).getValue();
 	}
 
 	@Override

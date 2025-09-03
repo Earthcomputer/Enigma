@@ -33,13 +33,19 @@ import cuchaz.enigma.utils.I18n;
 
 public class ProgressDialog implements ProgressListener, AutoCloseable {
 	private final JDialog dialog;
-	private final JLabel labelTitle = new JLabel();
-	private final JLabel labelText = GuiUtil.unboldLabel(new JLabel());
-	private final JProgressBar progress = new JProgressBar();
+	private final JLabel labelTitle;
+	private final JLabel labelText;
+	private final JProgressBar progress;
+	private int totalWork;
+	private String title;
 
 	public ProgressDialog(JFrame parent) {
 		// init frame
 		this.dialog = new JDialog(parent, String.format(I18n.translate("progress.operation"), Enigma.NAME));
+		this.labelTitle = new JLabel();
+		this.labelText = GuiUtil.unboldLabel(new JLabel());
+		this.progress = new JProgressBar();
+
 		Container pane = this.dialog.getContentPane();
 		pane.setLayout(new GridBagLayout());
 
@@ -59,6 +65,13 @@ public class ProgressDialog implements ProgressListener, AutoCloseable {
 		this.dialog.setResizable(false);
 		this.reposition();
 		this.dialog.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+	}
+
+	private ProgressDialog(ProgressDialog other) {
+		this.dialog = other.dialog;
+		this.labelTitle = other.labelTitle;
+		this.labelText = other.labelText;
+		this.progress = other.progress;
 	}
 
 	// This tries to set the window size to the smallest it can be vertically,
@@ -110,6 +123,8 @@ public class ProgressDialog implements ProgressListener, AutoCloseable {
 	@Override
 	public void init(int totalWork, String title) {
 		SwingUtilities.invokeLater(() -> {
+			this.totalWork = totalWork;
+			this.title = title;
 			this.labelTitle.setText(title);
 			this.progress.setMinimum(0);
 			this.progress.setMaximum(totalWork);
@@ -120,15 +135,23 @@ public class ProgressDialog implements ProgressListener, AutoCloseable {
 	@Override
 	public void step(int numDone, String message) {
 		SwingUtilities.invokeLater(() -> {
+			this.labelTitle.setText(title);
 			this.labelText.setText(message);
 
 			if (numDone != -1) {
+				this.progress.setValue(0);
+				this.progress.setMaximum(totalWork);
 				this.progress.setValue(numDone);
 				this.progress.setIndeterminate(false);
 			} else {
 				this.progress.setIndeterminate(true);
 			}
 		});
+	}
+
+	@Override
+	public ProgressListener fork() {
+		return new ProgressDialog(this);
 	}
 
 	public interface ProgressRunnable {

@@ -16,7 +16,7 @@ import net.fabricmc.mappingio.tree.VisitableMappingTree;
 import org.jetbrains.annotations.ApiStatus;
 
 import cuchaz.enigma.ProgressListener;
-import cuchaz.enigma.analysis.index.JarIndex;
+import cuchaz.enigma.analysis.index.ReducedJarIndex;
 import cuchaz.enigma.translation.mapping.EntryMapping;
 import cuchaz.enigma.translation.mapping.MappingDelta;
 import cuchaz.enigma.translation.mapping.MappingOperations;
@@ -103,7 +103,7 @@ public enum MappingFormat {
 		return read(path, progressListener, saveParameters, null);
 	}
 
-	public EntryTree<EntryMapping> read(Path path, ProgressListener progressListener, MappingSaveParameters saveParameters, JarIndex index) throws IOException, MappingParseException {
+	public EntryTree<EntryMapping> read(Path path, ProgressListener progressListener, MappingSaveParameters saveParameters, ReducedJarIndex index) throws IOException, MappingParseException {
 		if (mappingIoCounterpart == null || (!useMappingIo() && reader != null)) {
 			return reader.read(path, progressListener, saveParameters);
 		}
@@ -140,7 +140,7 @@ public enum MappingFormat {
 	/**
 	 * @return Enigma's native reader for the format, or {@code null} if none exists.
 	 *
-	 * @deprecated Use {@link #isReadable()} and {@link #read(Path, ProgressListener, MappingSaveParameters, JarIndex)} instead,
+	 * @deprecated Use {@link #isReadable()} and {@link #read(Path, ProgressListener, MappingSaveParameters, ReducedJarIndex)} instead,
 	 * which take the new Mapping-IO equivalents (and eventual replacements) into account.
 	 */
 	@Nullable

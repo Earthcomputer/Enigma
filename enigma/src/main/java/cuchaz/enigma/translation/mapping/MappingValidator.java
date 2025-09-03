@@ -7,7 +7,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import cuchaz.enigma.analysis.index.InheritanceIndex;
-import cuchaz.enigma.analysis.index.JarIndex;
+import cuchaz.enigma.analysis.index.ReducedJarIndex;
 import cuchaz.enigma.translation.Translator;
 import cuchaz.enigma.translation.mapping.tree.EntryTree;
 import cuchaz.enigma.translation.representation.AccessFlags;
@@ -19,9 +19,9 @@ import cuchaz.enigma.utils.validation.ValidationContext;
 public class MappingValidator {
 	private final EntryTree<EntryMapping> obfToDeobf;
 	private final Translator deobfuscator;
-	private final JarIndex index;
+	private final ReducedJarIndex index;
 
-	public MappingValidator(EntryTree<EntryMapping> obfToDeobf, Translator deobfuscator, JarIndex index) {
+	public MappingValidator(EntryTree<EntryMapping> obfToDeobf, Translator deobfuscator, ReducedJarIndex index) {
 		this.obfToDeobf = obfToDeobf;
 		this.deobfuscator = deobfuscator;
 		this.index = index;

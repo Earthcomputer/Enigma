@@ -38,7 +38,7 @@ import cuchaz.enigma.translation.representation.entry.MethodEntry;
 import cuchaz.enigma.translation.representation.entry.ParentedEntry;
 import cuchaz.enigma.utils.I18n;
 
-public class JarIndex implements JarIndexer {
+public class JarIndex implements JarIndexer, ReducedJarIndex {
 	private final Set<String> indexedClasses = new HashSet<>();
 	private final EntryIndex entryIndex;
 	private final InheritanceIndex inheritanceIndex;
@@ -51,13 +51,13 @@ public class JarIndex implements JarIndexer {
 
 	private final ConcurrentMap<ClassEntry, List<ParentedEntry<?>>> childrenByClass;
 
-	public JarIndex(EntryIndex entryIndex, InheritanceIndex inheritanceIndex, ReferenceIndex referenceIndex, BridgeMethodIndex bridgeMethodIndex, PackageVisibilityIndex packageVisibilityIndex) {
+	private JarIndex(EntryIndex entryIndex, InheritanceIndex inheritanceIndex, ReferenceIndex referenceIndex, BridgeMethodIndex bridgeMethodIndex, PackageVisibilityIndex packageVisibilityIndex) {
 		this.entryIndex = entryIndex;
 		this.inheritanceIndex = inheritanceIndex;
 		this.referenceIndex = referenceIndex;
 		this.bridgeMethodIndex = bridgeMethodIndex;
 		this.packageVisibilityIndex = packageVisibilityIndex;
-		this.indexers = List.of(entryIndex, inheritanceIndex, referenceIndex, bridgeMethodIndex, packageVisibilityIndex);
+		this.indexers = List.of(entryIndex, inheritanceIndex, referenceIndex, packageVisibilityIndex);
 		this.entryResolver = new IndexEntryResolver(this);
 		this.childrenByClass = new ConcurrentHashMap<>();
 	}
@@ -72,6 +72,10 @@ public class JarIndex implements JarIndexer {
 	}
 
 	public ClassProvider indexJar(Collection<String> classNames, ClassProvider classProvider, ProgressListener progress) {
+		return indexJar(classNames, classProvider, reducedIndex -> classProvider, progress);
+	}
+
+	public ClassProvider indexJar(Collection<String> classNames, ClassProvider classProvider, MidIndexAction midIndexAction, ProgressListener progress) {
 		indexedClasses.addAll(classNames);
 		progress.init(4, I18n.translate("progress.jar.indexing"));
 
@@ -81,25 +85,25 @@ public class JarIndex implements JarIndexer {
 			classProvider.get(className).accept(new IndexClassVisitor(this, Enigma.ASM_VERSION));
 		});
 
-		ClassProvider classProviderWithFrames = new CachingClassProvider(new AddFramesIfNecessaryClassProvider(classProvider, entryIndex));
+		progress.step(2, I18n.translate("progress.jar.indexing.methods"));
+		bridgeMethodIndex.findBridgeMethods();
 
-		progress.step(2, I18n.translate("progress.jar.indexing.references"));
+		ClassProvider transformedClassProvider = new CachingClassProvider(new AddFramesIfNecessaryClassProvider(midIndexAction.run(this), entryIndex));
+
+		progress.step(3, I18n.translate("progress.jar.indexing.references"));
 
 		classNames.parallelStream().forEach(className -> {
 			try {
-				classProviderWithFrames.get(className).accept(new IndexReferenceVisitor(this, Enigma.ASM_VERSION));
+				transformedClassProvider.get(className).accept(new IndexReferenceVisitor(this, Enigma.ASM_VERSION));
 			} catch (Exception e) {
 				throw new RuntimeException("Exception while indexing class: " + className, e);
 			}
 		});
 
-		progress.step(3, I18n.translate("progress.jar.indexing.methods"));
-		bridgeMethodIndex.findBridgeMethods();
-
 		progress.step(4, I18n.translate("progress.jar.indexing.process"));
 		processIndex(this);
 
-		return classProviderWithFrames;
+		return transformedClassProvider;
 	}
 
 	@Override
@@ -188,10 +192,12 @@ public class JarIndex implements JarIndexer {
 		indexers.forEach(indexer -> indexer.indexLambda(callerEntry, lambda, targetType));
 	}
 
+	@Override
 	public EntryIndex getEntryIndex() {
 		return entryIndex;
 	}
 
+	@Override
 	public InheritanceIndex getInheritanceIndex() {
 		return this.inheritanceIndex;
 	}
@@ -200,6 +206,7 @@ public class JarIndex implements JarIndexer {
 		return referenceIndex;
 	}
 
+	@Override
 	public BridgeMethodIndex getBridgeMethodIndex() {
 		return bridgeMethodIndex;
 	}
@@ -208,10 +215,12 @@ public class JarIndex implements JarIndexer {
 		return packageVisibilityIndex;
 	}
 
+	@Override
 	public EntryResolver getEntryResolver() {
 		return entryResolver;
 	}
 
+	@Override
 	public Map<ClassEntry, List<ParentedEntry<?>>> getChildrenByClass() {
 		return this.childrenByClass;
 	}
@@ -225,5 +234,10 @@ public class JarIndex implements JarIndexer {
 		synchronized (list) {
 			list.add(value);
 		}
+	}
+
+	@FunctionalInterface
+	public interface MidIndexAction {
+		ClassProvider run(ReducedJarIndex index);
 	}
 }

@@ -20,7 +20,7 @@ import net.fabricmc.mappingio.tree.VisitableMappingTree;
 import org.jetbrains.annotations.ApiStatus;
 
 import cuchaz.enigma.ProgressListener;
-import cuchaz.enigma.analysis.index.JarIndex;
+import cuchaz.enigma.analysis.index.ReducedJarIndex;
 import cuchaz.enigma.translation.mapping.EntryMap;
 import cuchaz.enigma.translation.mapping.EntryMapping;
 import cuchaz.enigma.translation.mapping.tree.EntryTree;
@@ -182,7 +182,7 @@ public class MappingIoConverter {
 		mappingTree.visitComment(MappedElementKind.METHOD_VAR, varMapping.javadoc());
 	}
 
-	public static EntryTree<EntryMapping> fromMappingIo(VisitableMappingTree mappingTree, ProgressListener progress, @Nullable JarIndex index) {
+	public static EntryTree<EntryMapping> fromMappingIo(VisitableMappingTree mappingTree, ProgressListener progress, @Nullable ReducedJarIndex index) {
 		EntryTree<EntryMapping> dstMappingTree = new HashEntryTree<>();
 		progress.init(mappingTree.getClasses().size(), I18n.translate("progress.mappings.converting.from_mappingio"));
 		int steps = 0;
@@ -195,7 +195,7 @@ public class MappingIoConverter {
 		return dstMappingTree;
 	}
 
-	private static void readClass(ClassMapping classMapping, EntryTree<EntryMapping> mappingTree, JarIndex index) {
+	private static void readClass(ClassMapping classMapping, EntryTree<EntryMapping> mappingTree, ReducedJarIndex index) {
 		ClassEntry currentClass = new ClassEntry(classMapping.getSrcName());
 		String dstName = classMapping.getDstName(0);
 
@@ -214,7 +214,7 @@ public class MappingIoConverter {
 		}
 	}
 
-	private static void readField(FieldMapping fieldMapping, ClassEntry parent, EntryTree<EntryMapping> mappingTree, JarIndex index) {
+	private static void readField(FieldMapping fieldMapping, ClassEntry parent, EntryTree<EntryMapping> mappingTree, ReducedJarIndex index) {
 		String srcDesc = fieldMapping.getSrcDesc();
 		FieldEntry[] fieldEntries;
 
@@ -223,7 +223,7 @@ public class MappingIoConverter {
 		} else {
 			if (index == null) return; // Enigma requires source descriptors, and without an index we can't look them up
 
-			fieldEntries = index.getChildrenByClass().get(parent).stream()
+			fieldEntries = index.getChildrenByClass().getOrDefault(parent, List.of()).stream()
 					.filter(entry -> entry instanceof FieldEntry)
 					.filter(entry -> entry.getName().equals(fieldMapping.getSrcName()))
 					.toArray(FieldEntry[]::new);

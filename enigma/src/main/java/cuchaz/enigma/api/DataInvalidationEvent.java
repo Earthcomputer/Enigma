@@ -18,12 +18,17 @@ public interface DataInvalidationEvent {
 		 * Only mappings are being invalidated.
 		 */
 		MAPPINGS,
+
 		/**
 		 * Javadocs are being invalidated. This also implies {@link #MAPPINGS}.
 		 */
 		JAVADOC,
+
 		/**
 		 * Class bytecode is being invalidated. This also implies {@link #JAVADOC} and {@link #MAPPINGS}.
+		 *
+		 * <p>Note that this can only be used to invalidate class bytecode that can be hotswapped, i.e., method
+		 * contents, and not class, field, and method definitions.
 		 */
 		CLASS,
 	}

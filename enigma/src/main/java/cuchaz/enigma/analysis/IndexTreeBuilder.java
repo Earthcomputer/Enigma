@@ -5,7 +5,7 @@ import java.util.List;
 
 import com.google.common.collect.Lists;
 
-import cuchaz.enigma.analysis.index.JarIndex;
+import cuchaz.enigma.analysis.index.ReducedJarIndex;
 import cuchaz.enigma.translation.Translator;
 import cuchaz.enigma.translation.mapping.EntryResolver;
 import cuchaz.enigma.translation.mapping.ResolutionStrategy;
@@ -13,9 +13,9 @@ import cuchaz.enigma.translation.representation.entry.ClassEntry;
 import cuchaz.enigma.translation.representation.entry.MethodEntry;
 
 public class IndexTreeBuilder {
-	private final JarIndex index;
+	private final ReducedJarIndex index;
 
-	public IndexTreeBuilder(JarIndex index) {
+	public IndexTreeBuilder(ReducedJarIndex index) {
 		this.index = index;
 	}
 

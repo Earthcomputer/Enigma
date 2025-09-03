@@ -149,6 +149,15 @@ public abstract class Command {
 		private int totalWork;
 		private long startTime;
 		private long lastReportTime;
+		private final int depth;
+
+		public ConsoleProgressListener() {
+			this(0);
+		}
+
+		public ConsoleProgressListener(int depth) {
+			this.depth = depth;
+		}
 
 		@Override
 		public void init(int totalWork, String title) {
@@ -166,14 +175,19 @@ public abstract class Command {
 
 			if (shouldReport) {
 				int percent = numDone * 100 / this.totalWork;
-				System.out.println(String.format("\tProgress: %3d%%", percent));
+				System.out.printf("%sProgress: %3d%%%n", "\t".repeat(depth + 1), percent);
 				this.lastReportTime = now;
 			}
 
 			if (isLastUpdate) {
 				double elapsedSeconds = (now - this.startTime) / 1000.0;
-				System.out.println(String.format("Finished in %.1f seconds", elapsedSeconds));
+				System.out.printf("%sFinished in %.1f seconds%n", "\t".repeat(depth), elapsedSeconds);
 			}
+		}
+
+		@Override
+		public ProgressListener fork() {
+			return new ConsoleProgressListener(depth + 1);
 		}
 	}
 }

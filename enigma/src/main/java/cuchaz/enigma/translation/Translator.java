@@ -21,8 +21,10 @@ import javax.annotation.Nullable;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import org.jetbrains.annotations.Contract;
 
 public interface Translator {
+	@Contract("null -> null; !null -> !null")
 	@Nullable
 	<T extends Translatable> TranslateResult<T> extendedTranslate(@Nullable T translatable);
 
